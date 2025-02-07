@@ -1,4 +1,4 @@
-let scene, camera, renderer, controls, raycaster, mouse, model;
+let scene, camera, renderer, controls, raycaster, mouse, model, mixer, sound;
 
 function init() {
   scene = new THREE.Scene();
@@ -40,13 +40,57 @@ function init() {
     }
   );
 
+  const listener = new THREE.AudioListener();
+  camera.add(listener);
+
+  sound = new THREE.Audio(listener);
+  const audioLoader = new THREE.AudioLoader();
+
+  const loadAudio = () => {
+    return new Promise((resolve, reject) => {
+      audioLoader.load(
+        "assets/dreamy-lofi-background-268725.mp3",
+        (buffer) => {
+          sound.setBuffer(buffer);
+          sound.setLoop(true);
+          sound.setVolume(0.5);
+          resolve();
+        },
+        undefined,
+        (error) => reject(error)
+      );
+    });
+  };
+
+  const handleAudioPlay = async () => {
+    try {
+      await loadAudio();
+
+      const playAudio = () => {
+        sound.play().catch((error) => {
+          console.log("Audio play failed, waiting for user interaction...");
+          const playOnInteraction = () => {
+            sound.play();
+            document.removeEventListener("click", playOnInteraction);
+            document.removeEventListener("keydown", playOnInteraction);
+          };
+
+          document.addEventListener("click", playOnInteraction);
+          document.addEventListener("keydown", playOnInteraction);
+        });
+      };
+
+      playAudio();
+    } catch (error) {
+      console.error("Error loading audio:", error);
+    }
+  };
+
+  handleAudioPlay();
+
   controls = new THREE.OrbitControls(camera, renderer.domElement);
-  // controls.enableRotate = true;
-  // controls.enablePan = true;
   controls.enableZoom = false;
-  // controls.screenSpacePanning = true;
   controls.maxPolarAngle = Math.PI / 3;
-  // controls.minPolarAngle = 0;
   controls.rotateSpeed = 1.0;
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
@@ -55,7 +99,6 @@ function init() {
   controls.update();
 
   window.addEventListener("mousemove", onMouseMove, false);
-
   window.addEventListener("resize", onWindowResize, false);
 }
 
@@ -79,7 +122,7 @@ function onWindowResize() {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-  mixer.update(0.01);
+  if (mixer) mixer.update(0.01);
   renderer.render(scene, camera);
 }
 
