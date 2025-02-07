@@ -1,7 +1,6 @@
 let scene, camera, renderer, controls, raycaster, mouse, model;
 
 function init() {
-  // Scene setup
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
     75,
@@ -14,26 +13,26 @@ function init() {
   renderer.setClearColor(new THREE.Color("skyblue"));
   document.body.appendChild(renderer.domElement);
 
-  // Add lights
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
   directionalLight.position.set(1, 1, 1);
   scene.add(directionalLight);
 
-  // Initialize Raycaster & Mouse
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  // Load the model
   const loader = new THREE.GLTFLoader();
   loader.load(
     "assets/model/scene.gltf",
     function (gltf) {
       model = gltf.scene;
-      model.scale.set(4, 4, 4);
+      model.scale.set(1, 1, 1);
       model.position.set(0, 0, 0);
       scene.add(model);
+
+      mixer = new THREE.AnimationMixer(model);
+      mixer.clipAction(gltf.animations[0]).play();
     },
     undefined,
     function (error) {
@@ -41,26 +40,22 @@ function init() {
     }
   );
 
-  // Camera controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableRotate = true;
-  controls.enablePan = true;
+  // controls.enableRotate = true;
+  // controls.enablePan = true;
   controls.enableZoom = false;
-  controls.screenSpacePanning = true;
-  controls.maxPolarAngle = Math.PI / 4;
-  controls.minPolarAngle = 0;
+  // controls.screenSpacePanning = true;
+  controls.maxPolarAngle = Math.PI / 3;
+  // controls.minPolarAngle = 0;
   controls.rotateSpeed = 1.0;
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
 
-  // Set initial camera position
   camera.position.set(5, 5, 5);
   controls.update();
 
-  // Handle mouse move event for hover effect
   window.addEventListener("mousemove", onMouseMove, false);
 
-  // Handle window resize
   window.addEventListener("resize", onWindowResize, false);
 }
 
@@ -84,9 +79,9 @@ function onWindowResize() {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+  mixer.update(0.01);
   renderer.render(scene, camera);
 }
 
-// Start the app
 init();
 animate();
